@@ -7,6 +7,7 @@ const {
   isValidPan,
 } = require('../src/utils/validation');
 const { maskAadhaar, maskPan, maskMobile } = require('../src/utils/masking');
+const Policy = require('../src/models/Policy');
 
 describe('Validation utilities', () => {
   const validCustomer = {
@@ -69,6 +70,14 @@ describe('Validation utilities', () => {
     expect(isValidPan('INVALID')).toBe(false);
   });
 
+  test('requires an Aadhaar number', () => {
+    const errors = validateCustomerData({
+      ...validCustomer,
+      aadhaar: '',
+    });
+    expect(errors.aadhaar).toBeDefined();
+  });
+
   test('calculates age correctly', () => {
     const age = calculateAge('1990-01-01');
     expect(age).toBeGreaterThanOrEqual(35);
@@ -116,6 +125,19 @@ describe('Policy validation', () => {
     expect(errors.term).toBeDefined();
   });
 
+  test('rejects an invalid premium frequency', () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const errors = validatePolicyData({
+      customerId: '507f1f77bcf86cd799439011',
+      term: 20,
+      premiumAmount: 10000,
+      premiumFrequency: 'Weekly',
+      startDate: tomorrow.toISOString(),
+    });
+    expect(errors.premiumFrequency).toBeDefined();
+  });
+
   test('rejects past start date', () => {
     const errors = validatePolicyData({
       customerId: '507f1f77bcf86cd799439011',
@@ -139,5 +161,11 @@ describe('PII masking', () => {
 
   test('masks mobile', () => {
     expect(maskMobile('9876543210')).toBe('98XXXXXX10');
+  });
+});
+
+describe('Policy ownership', () => {
+  test('makes the owning agent immutable after a policy is issued', () => {
+    expect(Policy.schema.path('agentId').options.immutable).toBe(true);
   });
 });

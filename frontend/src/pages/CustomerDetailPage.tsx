@@ -10,6 +10,7 @@ interface EditForm {
   name: string;
   email: string;
   mobile: string;
+  pan?: string;
   nomineeName: string;
   nomineeRelation: string;
 }
@@ -73,7 +74,20 @@ export const CustomerDetailPage = () => {
     setFieldErrors({});
     setLoading(true);
     try {
-      const { data: res } = await agentApi.updateCustomer(id, data);
+      // Customer details are returned with masked PII. Send only fields that
+      // the agent has actually changed so a masked mobile number is never sent
+      // back to the API as if it were a real phone number.
+      const changedData = Object.entries(editForm.formState.dirtyFields).reduce(
+        (updates, [field, changed]) => {
+          if (changed) {
+            updates[field as keyof EditForm] = data[field as keyof EditForm];
+          }
+          return updates;
+        },
+        {} as Partial<EditForm>
+      );
+
+      const { data: res } = await agentApi.updateCustomer(id, changedData);
       setCustomer(res.customer);
       setEditing(false);
       setMessage('Customer updated successfully');
@@ -174,6 +188,14 @@ export const CustomerDetailPage = () => {
                 <Field label="Mobile" error={fieldErrors.mobile}>
                   <input className={inputClass} {...editForm.register('mobile')} />
                 </Field>
+                <Field label="PAN" error={fieldErrors.pan}>
+                  <input
+                    className={inputClass}
+                    maxLength={10}
+                    placeholder="Enter full PAN only to add or change it"
+                    {...editForm.register('pan')}
+                  />
+                </Field>
                 <Field label="Nominee Name" error={fieldErrors.nomineeName}>
                   <input className={inputClass} {...editForm.register('nomineeName')} />
                 </Field>
@@ -184,6 +206,9 @@ export const CustomerDetailPage = () => {
               <button type="submit" disabled={loading} className={`mt-4 ${buttonPrimary}`}>
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
+              <p className="mt-3 text-xs text-slate-500">
+                Your current mobile number and PAN are masked for privacy. Enter a full value only when you want to change it.
+              </p>
             </form>
           )}
 
@@ -223,6 +248,11 @@ export const CustomerDetailPage = () => {
               <button type="submit" disabled={loading} className={`mt-4 ${buttonPrimary}`}>
                 {loading ? 'Issuing...' : 'Issue Policy'}
               </button>
+              {fieldErrors.pan && (
+                <p className="mt-3 text-sm text-red-600">
+                  Add the customer&apos;s PAN from Edit Customer before issuing a policy above ₹50,000.
+                </p>
+              )}
             </form>
           )}
 

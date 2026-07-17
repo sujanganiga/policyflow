@@ -4,14 +4,14 @@ A full-stack web application that simulates insurance onboarding and policy issu
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Backend | Node.js, Express.js |
-| Frontend | React, TypeScript, Vite, Tailwind CSS |
-| Database | MongoDB (Atlas-ready) |
-| Auth | Cookie-based sessions (15 min expiry) |
-| API Client | Axios |
-| Testing | Jest, Supertest |
+| Layer      | Technology                            |
+| ---------- | ------------------------------------- |
+| Backend    | Node.js, Express.js                   |
+| Frontend   | React, TypeScript, Vite, Tailwind CSS |
+| Database   | MongoDB (Atlas-ready)                 |
+| Auth       | Cookie-based sessions (15 min expiry) |
+| API Client | Axios                                 |
+| Testing    | Jest, Supertest                       |
 
 ## Project Structure
 
@@ -91,12 +91,14 @@ npm run seed
 ### 4. Start the application
 
 **Terminal 1 — Backend:**
+
 ```bash
 cd backend
 npm run dev
 ```
 
 **Terminal 2 — Frontend:**
+
 ```bash
 cd frontend
 npm run dev
@@ -107,10 +109,10 @@ npm run dev
 
 ### Default Admin Credentials
 
-| Field | Value |
-|-------|-------|
-| Email | `admin@policyflow.com` |
-| Password | `Admin@123` |
+| Field    | Value                  |
+| -------- | ---------------------- |
+| Email    | `admin@policyflow.com` |
+| Password | `Admin@123`            |
 
 Create Agent accounts from the Admin dashboard, then log in as an Agent.
 
@@ -130,28 +132,31 @@ MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/policyflo
 ## API Endpoints
 
 ### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login (email, password, role) |
-| POST | `/api/auth/logout` | Logout and clear session |
-| GET | `/api/auth/me` | Get current user |
+
+| Method | Endpoint           | Description                   |
+| ------ | ------------------ | ----------------------------- |
+| POST   | `/api/auth/login`  | Login (email, password, role) |
+| POST   | `/api/auth/logout` | Logout and clear session      |
+| GET    | `/api/auth/me`     | Get current user              |
 
 ### Admin (requires admin role)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/admin/agents` | Create agent |
-| GET | `/api/admin/agents` | List agents (paginated, filter by status) |
-| DELETE | `/api/admin/agents/:id` | Deactivate agent |
+
+| Method | Endpoint                | Description                               |
+| ------ | ----------------------- | ----------------------------------------- |
+| POST   | `/api/admin/agents`     | Create agent                              |
+| GET    | `/api/admin/agents`     | List agents (paginated, filter by status) |
+| DELETE | `/api/admin/agents/:id` | Deactivate agent                          |
 
 ### Agent (requires agent role)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/customers` | Create customer |
-| GET | `/api/customers/search?q=` | Search customers |
-| GET | `/api/customers/:id` | Get customer details |
-| PUT | `/api/customers/:id` | Update customer |
-| POST | `/api/policies/issue` | Issue policy |
-| GET | `/api/policies/customer/:customerId` | List customer policies |
+
+| Method | Endpoint                             | Description            |
+| ------ | ------------------------------------ | ---------------------- |
+| POST   | `/api/customers`                     | Create customer        |
+| GET    | `/api/customers/search?q=`           | Search customers       |
+| GET    | `/api/customers/:id`                 | Get customer details   |
+| PUT    | `/api/customers/:id`                 | Update customer        |
+| POST   | `/api/policies/issue`                | Issue policy           |
+| GET    | `/api/policies/customer/:customerId` | List customer policies |
 
 ## Business Rules (backend-enforced)
 
@@ -171,11 +176,11 @@ MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/policyflo
 
 List, search, and detail responses mask sensitive fields:
 
-| Field | Example | Masked |
-|-------|---------|--------|
+| Field   | Example      | Masked         |
+| ------- | ------------ | -------------- |
 | Aadhaar | 123456789012 | XXXX-XXXX-9012 |
-| PAN | ABCDE1234F | ABCXX12XXF |
-| Mobile | 9876543210 | 98XXXXXX10 |
+| PAN     | ABCDE1234F   | ABCXX12XXF     |
+| Mobile  | 9876543210   | 98XXXXXX10     |
 
 ## Running Tests
 
@@ -184,13 +189,49 @@ cd backend
 npm test
 ```
 
+Expected result:
+
+```text
+Test Suites: 2 passed, 2 total
+Tests:       36 passed, 36 total
+```
+
 Tests cover:
+
 - Business rule validation utilities
 - PII masking functions
 - Auth API (login, role checks)
-- Customer creation with masking
-- Agent ownership isolation
-- Admin route access control
+- Logout and 15-minute session configuration
+- Customer creation, updates, masking, and PAN/Aadhaar duplicate checks
+- Policy issuance validation and Agent ownership isolation
+- Agent deactivation, pagination, status filters, and Admin route access control
+
+## Local Status and Deployment Note
+
+The application has been tested locally: the frontend build completes successfully and all 36 Jest tests pass.
+
+When deploying the frontend and backend to different domains, CORS and cookies need to be configured correctly. If these values do not match, browser requests can be blocked even though the application works locally.
+
+Set the following environment variables on the deployed backend:
+
+```env
+NODE_ENV=production
+CLIENT_URL=https://policyflow-nine.vercel.app/
+SESSION_SECRET=use-a-long-random-secret
+```
+
+Set the following environment variable on the deployed frontend:
+
+```env
+VITE_API_URL=https://your-backend-domain.onrender.com/api
+```
+
+Important deployment checks:
+
+- `CLIENT_URL` must exactly match the deployed frontend URL, including `https://` and without a trailing slash.
+- The frontend request client must keep `withCredentials: true` enabled (already configured in this project).
+- The backend must allow credentials through CORS and use `sameSite: 'none'` with secure cookies in production (already configured when `NODE_ENV=production`).
+- If you use Vercel preview URLs, add each preview origin to `CLIENT_URL` as a comma-separated value, or test using the production URL.
 
 ## Deployment Guide
 
@@ -214,13 +255,13 @@ Tests cover:
    - `VITE_API_URL=https://your-backend.onrender.com/api`
 3. Deploy.
 
-> **Note:** For cross-origin cookies in production, ensure `CLIENT_URL` on the backend matches your frontend origin exactly, and `sameSite: 'none'` + `secure: true` are set (already configured when `NODE_ENV=production`).
+> **CORS note:** For cross-origin cookies in production, ensure `CLIENT_URL` on the backend matches your frontend origin exactly, and `sameSite: 'none'` + `secure: true` are set (already configured when `NODE_ENV=production`).
 
 ## Role Summary
 
-| Role | Capabilities |
-|------|-------------|
-| **Admin** | Create/view/deactivate agents, read-only system visibility |
+| Role      | Capabilities                                                   |
+| --------- | -------------------------------------------------------------- |
+| **Admin** | Create/view/deactivate agents, read-only system visibility     |
 | **Agent** | Full customer lifecycle — search, create, edit, issue policies |
 
 Agents can only access their own customers and policies. Admins cannot create customers or policies.

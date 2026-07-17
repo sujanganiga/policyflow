@@ -223,7 +223,7 @@ SESSION_SECRET=use-a-long-random-secret
 Set the following environment variable on the deployed frontend:
 
 ```env
-VITE_API_URL=https://your-backend-domain.onrender.com/api
+VITE_API_URL=(https://policyflow-evij.onrender.com)
 ```
 
 Important deployment checks:
